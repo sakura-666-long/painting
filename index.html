@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>国画定制 - 一站式国画装饰画定制平台</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+        *{
+            margin:0;
+            padding:0;
+            box-sizing: border-box;
+            font-family: 'Noto Serif SC', serif;
+        }
+        body{
+            background-color: #F4F0E3;
+            background-image: url('https://cdn.pixabay.com/photo/2017/08/02/14/26/paper-2574920_1280.jpg');
+            background-repeat: repeat;
+            color:#2D2D2D;
+        }
+        header{
+            display:flex;
+            justify-content: space-between;
+            padding:1rem 8rem;
+            border-bottom: 1px solid #8C5A2F50;
+            align-items:center;
+        }
+        .logo{
+            display:flex;
+            gap:12px;
+            align-items:center;
+            font-size:24px;
+            font-weight:bold;
+            color:#2D2D2D;
+        }
+        nav a{
+            text-decoration:none;
+            color:#2D2D2D;
+            margin:0 16px;
+            font-size:18px;
+        }
+        .banner{
+            text-align:center;
+            padding:4rem 2rem;
+            background: linear-gradient(rgba(244,240,227,0.7),rgba(244,240,227,0.7)), url("https://cdn.pixabay.com/photo/2018/01/12/10/19/chinese-painting-3078737_1280.jpg");
+            background-size:cover;
+        }
+        .banner h1{
+            font-size:36px;
+            color:#2D2D2D;
+            margin-bottom:16px;
+        }
+        .banner p{
+            font-size:20px;
+            color:#444;
+        }
+        .process-wrap{
+            width:85%;
+            margin:4rem auto;
+        }
+        .process-title{
+            text-align:center;
+            font-size:28px;
+            margin-bottom:3rem;
+        }
+        .process-row{
+            display:grid;
+            grid-template-columns: repeat(4,1fr);
+            gap:24px;
+        }
+        .scroll-card{
+            background:#fffdf7;
+            border:2px solid #8C5A2F;
+            border-radius:6px;
+            padding:24px;
+            position:relative;
+        }
+        .scroll-card h3{
+            font-size:22px;
+            margin-bottom:12px;
+            color:#8C5A2F;
+        }
+        .scroll-card p{
+            line-height:1.7;
+        }
+        .btn{
+            display:block;
+            width:fit-content;
+            margin:3rem auto;
+            padding:14px 32px;
+            background:#8C5A2F;
+            color:#fff;
+            text-decoration:none;
+            border-radius:4px;
+            font-size:18px;
+        }
+        .btn:hover{
+            background:#704824;
+        }
+        .gallery-section{
+            width:85%;
+            margin:0 auto 4rem;
+        }
+        .gallery-title{
+            text-align:center;
+            font-size:28px;
+            margin-bottom:2rem;
+        }
+        .gallery-grid{
+            display:grid;
+            grid-template-columns: repeat(3,1fr);
+            gap:20px;
+        }
+        .art-item{
+            border:2px solid #8C5A2F50;
+            padding:12px;
+            background:#fffdf7;
+        }
+        .art-item img{
+            width:100%;
+            height:260px;
+            object-fit:contain;
+        }
+        .art-item a{
+            display:block;
+            text-align:center;
+            font-size:13px;
+            color:#8C5A2F;
+            margin-top:4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <span>🖌️ 国画定制工坊</span>
+        </div>
+        <nav>
+            <a href="./index.html">首页</a>
+            <a href="./select.html">国画图库选画</a>
+            <a href="./preview.html">虚拟挂画预览</a>
+            <a href="./color.html">调色定制</a>
+            <a href="./order.html">订单中心</a>
+        </nav>
+    </header>
+    <div class="banner">
+        <h1>团队自主研发国画调色技术｜一站式国画装饰画定制服务</h1>
+        <p>AI智能推荐 · 线上虚拟场景预览 · 全流程线上可视化管理</p>
+    </div>
+    <div class="process-wrap">
+        <h2 class="process-title">定制服务流程</h2>
+        <div class="process-row">
+            <div class="scroll-card">
+                <h3>① 客户需求</h3>
+                <p>在网站选画，可以自行去上传所需画作<br>素材来源：hetuwang.cn鹤图网</p>
+                <a class="btn" href="./select.html">前往选画</a>
+            </div>
+            <div class="scroll-card">
+                <h3>② 设计选画</h3>
+                <p>线上虚拟场景预览，直接查看国画挂在家中的实景效果</p>
+                <a class="btn" href="./preview.html">虚拟预览</a>
+            </div>
+            <div class="scroll-card">
+                <h3>③ 调色打印</h3>
+                <p>国画调色处理，生成效果图发给客户确认，提供一对一在线改图服务</p>
+                <a class="btn" href="./color.html">调色定制</a>
+            </div>
+            <div class="scroll-card">
+                <h3>④ 装裱发送</h3>
+                <p>多种相框款式可选，安全包装配送，订单全程线上档案管理</p>
+                <a class="btn" href="./order.html">订单装裱</a>
+            </div>
+        </div>
+    </div>
+    <div class="gallery-section">
+        <h2 class="gallery-title">国画图库（素材来源：hetuwang.cn）</h2>
+        <div class="gallery-grid">
+            <div class="art-item">
+                <img src="https://img.wanwang.xin/contents/sitefiles2051/10258221/images/176383659.png" alt="千里江山图">
+                <a href="https://hetuwang.cn/productinfo/304048.html" target="_blank">查看详情</a>
+                <p>M0659 千里江山图</p>
+            </div>
+            <div class="art-item">
+                <img src="https://img.wanwang.xin/contents/sitefiles2051/10258221/images/174701276.jpg" alt="国画荷">
+                <a href="https://hetuwang.cn/productinfo/175798.html" target="_blank">查看详情</a>
+                <p>M0606 《荷》工笔国画</p>
+            </div>
+            <div class="art-item">
+                <img src="https://img.wanwang.xin/contents/sitefiles2051/10258221/images/175314608.png" alt="青山绿水中堂">
+                <a href="https://hetuwang.cn/productinfo/229612.html" target="_blank">查看详情</a>
+                <p>M0634 青山绿水中堂画</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
