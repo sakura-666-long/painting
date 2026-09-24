@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能选画与场景预演</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        body {
+            background-color: #F4F0E3;
+            background-image: url('https://cdn.pixabay.com/photo/2017/08/02/14/26/paper-2574920_1280.jpg');
+            background-repeat: repeat;
+            color: #2D2D2D;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 6rem;
+            border-bottom: 1px solid #8C5A2F50;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2D2D2D;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #2D2D2D;
+            margin: 0 14px;
+            font-size: 17px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 260px 1fr 240px;
+            gap: 16px;
+            width: 96%;
+            margin: 20px auto;
+            height: calc(100vh - 110px);
+        }
+
+        .left-panel,
+        .control-panel {
+            background: #fffdf7;
+            border: 2px solid #8C5A2F;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .left-panel h3,
+        .control-panel h3 {
+            color: #8C5A2F;
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #8C5A2F40;
+        }
+
+        .upload-box {
+            border: 1px dashed #8C5A2F70;
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+            background: #faf6ec;
+            margin-bottom: 16px;
+        }
+
+        .upload-box p {
+            font-size: 14px;
+            color: #6b5a42;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            background: #8C5A2F;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #704824;
+        }
+
+        .tip {
+            font-size: 13px;
+            color: #6b5a42;
+            line-height: 1.6;
+            margin-top: 12px;
+        }
+
+        .preview-wrap {
+            border: 2px solid #8C5A2F;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #sceneBg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        #painting {
+            position: absolute;
+            top: 30%;
+            left: 35%;
+            width: 240px;
+            cursor: grab;
+            display: none;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+            transform-origin: center center;
+        }
+
+        #painting:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🖌丹青画境｜智能选画与场景预演</div>
+        <nav>
+            <a href="./index.html">首页</a>
+            <a href="./select.html">需求对接归集</a>
+            <a href="./preview.html">智能选画与场景预演</a>
+            <a href="./color.html">数字调色确认</a>
+            <a href="./order.html">成品交付溯源</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="left-panel">
+            <h3>上传自定义背景</h3>
+
+            <div class="upload-box">
+                <p>上传客厅、书房、玄关等背景图</p>
+                <input type="file" id="bgUpload" accept="image/*" style="width:100%;font-size:14px;">
+            </div>
+
+            <button class="btn" onclick="useUploadedBackground()">使用上传背景</button>
+            <button class="btn" onclick="resetBackground()">恢复默认客厅背景</button>
+            <button class="btn" onclick="resetPainting()">重置画作位置</button>
+
+            <p class="tip">
+                操作说明：<br>
+                拖拽画作移动位置<br>
+                鼠标滚轮放大缩小
+            </p>
+        </div>
+
+        <div class="preview-wrap">
+            <img id="sceneBg" src="https://cdn.pixabay.com/photo/2016/08/26/15/12/living-room-1622400_1280.jpg" alt="客厅背景">
+            <img id="painting" alt="预览画作">
+        </div>
+
+        <div class="control-panel">
+            <h3>控制面板</h3>
+
+            <button class="btn" onclick="resetPainting()">重置位置与大小</button>
+            <button class="btn" onclick="goColorPage()">进入调色定制 →</button>
+
+            <p class="tip">
+                背景图可自行上传。<br>
+                画作从选画页自动带入。
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const sceneBg = document.getElementById('sceneBg');
+        const painting = document.getElementById('painting');
+
+        const defaultBg = 'https://t9.baidu.com/it/u=2690654354,1598219501&fm=193';
+
+        let isDrag = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        let scale = 1;
+        let currentImgUrl = '';
+
+        // 读取 select.html 传过来的画作
+        const urlParams = new URLSearchParams(window.location.search);
+        const initImg = urlParams.get('img');
+
+        if (initImg) {
+            selectPainting(decodeURIComponent(initImg));
+        }
+
+        // 用户上传背景图
+        function useUploadedBackground() {
+            const fileInput = document.getElementById('bgUpload');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('请先选择背景图片');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                sceneBg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 恢复默认背景
+        function resetBackground() {
+            sceneBg.src = defaultBg;
+        }
+
+        // 加载画作
+        function selectPainting(imgUrl) {
+            currentImgUrl = imgUrl;
+            painting.src = imgUrl;
+            painting.style.display = 'block';
+            scale = 1;
+            painting.style.transform = 'scale(1)';
+            painting.style.top = '30%';
+            painting.style.left = '35%';
+        }
+
+        // 重置画作
+        function resetPainting() {
+            if (!currentImgUrl) {
+                alert('请先从选画页选择一幅画');
+                return;
+            }
+
+            scale = 1;
+            painting.style.transform = 'scale(1)';
+            painting.style.top = '30%';
+            painting.style.left = '35%';
+        }
+
+        // 进入调色页
+        function goColorPage() {
+            if (!currentImgUrl) {
+                alert('请先选择一幅画');
+                return;
+            }
+
+            window.location.href = `color.html?img=${encodeURIComponent(currentImgUrl)}`;
+        }
+
+        // 拖拽开始
+        painting.addEventListener('mousedown', function (e) {
+            isDrag = true;
+            const rect = painting.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+        });
+
+        // 拖拽移动
+        document.addEventListener('mousemove', function (e) {
+            if (!isDrag) return;
+
+            const wrap = document.querySelector('.preview-wrap');
+            const wrapRect = wrap.getBoundingClientRect();
+
+            let left = e.clientX - wrapRect.left - offsetX;
+            let top = e.clientY - wrapRect.top - offsetY;
+
+            painting.style.left = left + 'px';
+            painting.style.top = top + 'px';
+        });
+
+        // 拖拽结束
+        document.addEventListener('mouseup', function () {
+            isDrag = false;
+        });
+
+        // 滚轮缩放
+        painting.addEventListener('wheel', function (e) {
+            e.preventDefault();
+
+            if (e.deltaY < 0) {
+                scale += 0.08;
+            } else {
+                scale -= 0.08;
+            }
+
+            if (scale < 0.2) scale = 0.2;
+            if (scale > 3) scale = 3;
+
+            painting.style.transform = `scale(${scale})`;
+        });
+    </script>
+</body>
+</html>
