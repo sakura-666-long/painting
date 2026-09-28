@@ -80,16 +80,38 @@
             padding:16px;
             text-align:center;
             cursor:pointer;
+            border-radius:6px;
+            transition: all 0.3s;
         }
         .frame-item:hover{
             background:#f3ece0;
+        }
+        .frame-item.active{
+            background:#e9ddc9;
+            border:2px solid #8C5A2F;
+        }
+        /* 画框预览容器，用来叠加相框效果 */
+        .frame-preview-wrap{
+            display: inline-block;
+            padding:0;
+        }
+        #orderImg{
+            max-height:320px;
+            display:block;
         }
         .art-preview{
             text-align:center;
             margin:20px 0;
         }
-        #orderImg{
-            max-height:320px;
+        .param-info{
+            background:#f7f2e6;
+            border:1px solid #8C5A2F40;
+            padding:14px;
+            margin:16px 0;
+            border-radius:6px;
+        }
+        .param-info p{
+            line-height:1.7;
         }
         .btn{
             padding:12px 30px;
@@ -136,29 +158,40 @@
                     <p>调色确认</p>
                 </div>
                 <div class="step">
-                    <div class="step-dot grey">4</div>
+                    <div class="step-dot grey" id="step4">4</div>
                     <p>装裱制作</p>
                 </div>
                 <div class="step">
-                    <div class="step-dot grey">5</div>
+                    <div class="step-dot grey" id="step5">5</div>
                     <p>发货配送</p>
                 </div>
             </div>
+
             <div class="art-preview">
                 <p>当前定制国画（素材来源 <a href="https://hetuwang.cn" target="_blank">hetuwang.cn</a>）</p>
-                <img id="orderImg">
+                <!-- 相框外层容器，通过修改padding+border模拟画框 -->
+                <div class="frame-preview-wrap" id="frameWrap">
+                    <img id="orderImg">
+                </div>
             </div>
-            <h3 style="text-align:center;color:#8C5A2F">选择相框款式</h3>
+
+            <!-- 调色参数展示区域 -->
+            <div class="param-info" id="paramBox">
+                <h4 style="color:#8C5A2F;margin-bottom:8px;">调色记录与备注</h4>
+                <p id="paramText"></p>
+            </div>
+
+            <h3 style="text-align:center;color:#8C5A2F">选择相框款式（点击预览效果）</h3>
             <div class="frame-grid">
-                <div class="frame-item">
+                <div class="frame-item" onclick="selectFrame('wood')">
                     <h4>原木简约框</h4>
                     <p>自然原木，素雅国风</p>
                 </div>
-                <div class="frame-item">
+                <div class="frame-item" onclick="selectFrame('redwood')">
                     <h4>红棕复古框</h4>
                     <p>传统中式，适合山水</p>
                 </div>
-                <div class="frame-item">
+                <div class="frame-item" onclick="selectFrame('blackthin')">
                     <h4>黑色窄边框</h4>
                     <p>现代极简，工笔花鸟</p>
                 </div>
@@ -167,14 +200,77 @@
             <p style="text-align:center">安全包装配送，生成线上订单档案，随时查看进度</p>
         </div>
     </div>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
+        // 获取color页面传过来所有参数
         let imgSrc = urlParams.get('img') ? decodeURIComponent(urlParams.get('img')) : "";
+        const bright = urlParams.get('bright') || 100;
+        const contrast = urlParams.get('contrast') || 100;
+        const saturate = urlParams.get('saturate') || 100;
+        const rotate = urlParams.get('rotate') || 0;
+        const mirror = urlParams.get('mirror') === "true";
+        const remark = urlParams.get('remark') ? decodeURIComponent(urlParams.get('remark')) : "无备注";
+
         const orderImgDom = document.getElementById("orderImg");
+        const frameWrap = document.getElementById("frameWrap");
+        const paramText = document.getElementById("paramText");
+
+        // 渲染图片，沿用调色滤镜、旋转、镜像
         if(imgSrc){
             orderImgDom.src = imgSrc;
+            let scaleX = mirror ? -1 : 1;
+            orderImgDom.style.filter = `brightness(${bright}%) contrast(${contrast}%) saturate(${saturate}%)`;
+            orderImgDom.style.transform = `rotate(${rotate}deg) scaleX(${scaleX})`;
         }
+
+        // 展示调色参数
+        paramText.innerHTML = `
+亮度：${bright}% &nbsp;&nbsp;对比度：${contrast}% &nbsp;&nbsp;饱和度：${saturate}%<br>
+旋转：${rotate}° &nbsp;&nbsp;水平镜像：${mirror ? "开启" : "关闭"}<br>
+改图备注：${remark}
+        `;
+
+        // 相框样式配置
+        const frameStyleList = {
+            wood: {
+                border: "12px solid #b48c5e",
+                padding: "6px",
+                boxShadow: "0 4px 12px #00000030"
+            },
+            redwood: {
+                border: "14px solid #6b3822",
+                padding: "8px",
+                boxShadow: "0 4px 14px #00000040"
+            },
+            blackthin: {
+                border: "6px solid #222222",
+                padding: "4px",
+                boxShadow: "0 3px 8px #00000025"
+            }
+        };
+        let currentFrameKey = "";
+
+        // 选中相框预览
+        function selectFrame(type){
+            currentFrameKey = type;
+            // 清除全部active
+            document.querySelectorAll(".frame-item").forEach(el=>el.classList.remove("active"));
+            event.currentTarget.classList.add("active");
+            // 应用画框css
+            const style = frameStyleList[type];
+            frameWrap.style.border = style.border;
+            frameWrap.style.padding = style.padding;
+            frameWrap.style.boxShadow = style.boxShadow;
+        }
+
+        // 提交订单，更新进度
         function submitOrder(){
+            if(!currentFrameKey){
+                alert("请先选择一款相框！");
+                return;
+            }
+            document.getElementById("step4").classList.remove("grey");
             alert("订单提交成功！开始装裱制作，订单档案已保存");
         }
     </script>
