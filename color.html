@@ -38,7 +38,7 @@
             width:90%;
             margin:30px auto;
             display:grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 1fr 340px;
             gap:24px;
         }
         .preview-box{
@@ -68,18 +68,22 @@
             margin-bottom:20px;
         }
         .slider-item{
-            margin-bottom:16px;
+            margin-bottom:14px;
         }
         .slider-item label{
             display:block;
             margin-bottom:4px;
+        }
+        .val-show{
+            font-size:14px;
+            color:#8C5A2F;
         }
         input[type="range"]{
             width:100%;
         }
         textarea{
             width:100%;
-            height:100px;
+            height:90px;
             padding:8px;
             border:1px solid #8C5A2F70;
             border-radius:4px;
@@ -98,6 +102,31 @@
         .btn:hover{
             background:#704824;
         }
+        .btn-row{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:8px;
+        }
+        .tip-text{
+            color:#994422;
+            margin:10px 0;
+        }
+        .filter-presets{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:8px;
+            margin-top:10px;
+        }
+        .preset-btn{
+            padding:8px;
+            background:#f3ece0;
+            border:1px solid #8C5A2F70;
+            border-radius:4px;
+            cursor:pointer;
+        }
+        .preset-btn:hover{
+            background:#e9ddc9;
+        }
     </style>
 </head>
 <body>
@@ -111,57 +140,363 @@
             <a href="./order.html">成品交付溯源</a>
         </nav>
     </header>
+
     <div class="container">
         <div class="preview-box">
             <h3>国画调色预览（素材来源：<a href="https://hetuwang.cn" target="_blank">hetuwang.cn</a>）</h3>
             <img id="colorImg">
-            <p style="margin-top:12px">调整色彩，一对一在线改图，确认效果图</p>
+            <p class="tip-text" id="imgTip">调整色彩，一对一在线改图，确认效果图</p>
+            <div class="btn-row" style="width:80%;margin:12px auto">
+                <button class="btn" onclick="toggleCompare()">原图/调色对比</button>
+                <button class="btn" onclick="downloadImg()">下载预览图</button>
+            </div>
         </div>
+
         <div class="control-card">
             <h3>调色控制面板</h3>
+
             <div class="slider-item">
-                <label>亮度</label>
+                <label>亮度 <span class="val-show" id="brightVal">100%</span></label>
                 <input type="range" id="bright" min="0" max="200" value="100">
             </div>
+
             <div class="slider-item">
-                <label>对比度</label>
+                <label>对比度 <span class="val-show" id="contrastVal">100%</span></label>
                 <input type="range" id="contrast" min="0" max="200" value="100">
             </div>
+
             <div class="slider-item">
-                <label>饱和度</label>
+                <label>饱和度 <span class="val-show" id="saturateVal">100%</span></label>
                 <input type="range" id="saturate" min="0" max="200" value="100">
             </div>
+
+            <div class="slider-item">
+                <label>色相 <span class="val-show" id="hueVal">0°</span></label>
+                <input type="range" id="hue" min="0" max="360" value="0">
+            </div>
+
+            <div class="slider-item">
+                <label>色温 <span class="val-show" id="tempVal">0</span></label>
+                <input type="range" id="temp" min="-100" max="100" value="0">
+            </div>
+
+            <div class="slider-item">
+                <label>暗部提亮 <span class="val-show" id="shadowVal">0</span></label>
+                <input type="range" id="shadow" min="-100" max="100" value="0">
+            </div>
+
+            <div class="slider-item">
+                <label>清晰度 <span class="val-show" id="sharpVal">0</span></label>
+                <input type="range" id="sharp" min="0" max="100" value="0">
+            </div>
+
+            <div class="slider-item">
+                <label>旋转角度 <span class="val-show" id="rotateVal">0°</span></label>
+                <input type="range" id="rotate" min="0" max="360" value="0">
+            </div>
+
+            <div class="slider-item">
+                <label>水平镜像 <input type="checkbox" id="mirror"></label>
+            </div>
+
+            <div class="slider-item">
+                <label>复古宣纸滤镜 <input type="checkbox" id="paperFilter"></label>
+            </div>
+
             <div class="slider-item">
                 <label>改图备注</label>
-                <textarea id="remark" placeholder="填写修改需求..."></textarea>
+                <textarea id="remark" placeholder="填写修改需求，如：加深墨色、调淡底色..."></textarea>
             </div>
+
+            <div class="filter-presets">
+                <button class="preset-btn" onclick="applyPreset('elegant')">雅致水墨</button>
+                <button class="preset-btn" onclick="applyPreset('warm')">暖金秋意</button>
+                <button class="preset-btn" onclick="applyPreset('cool')">淡雅青灰</button>
+                <button class="preset-btn" onclick="applyPreset('red')">朱砂古韵</button>
+            </div>
+
+            <button class="btn" onclick="undoFilter()">撤销上一步</button>
+            <button class="btn" onclick="resetFilter()">重置所有调色</button>
             <button class="btn" onclick="confirmColor()">确认调色效果</button>
             <button class="btn" onclick="goOrderPage()">下一步 选择装裱相框 →</button>
         </div>
     </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
+        // 接收上一页（preview.html）传过来的图片链接
         let imgSrc = urlParams.get('img') ? decodeURIComponent(urlParams.get('img')) : "";
         const imgDom = document.getElementById("colorImg");
+        const imgTip = document.getElementById("imgTip");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let originalFilter = "";
+        let isCompare = false;
+
+        // 加载传入的图片
         if(imgSrc){
             imgDom.src = imgSrc;
+            imgDom.onload = ()=>{
+                imgTip.innerText = "图片加载完成，可以开始调色";
+            }
+            imgDom.onerror = ()=>{
+                imgTip.innerText = "图片加载失败，请检查图片链接";
+            }
+        }else{
+            imgTip.innerText = "未接收到画作图片，请从上一页【智能选画】选择国画";
         }
-        // 滤镜调色
+
+        // 控件
         const bright = document.getElementById("bright");
         const contrast = document.getElementById("contrast");
         const saturate = document.getElementById("saturate");
-        function updateFilter(){
-            imgDom.style.filter = `brightness(${bright.value}%) contrast(${contrast.value}%) saturate(${saturate.value}%)`;
-        }
-        bright.oninput = updateFilter;
-        contrast.oninput = updateFilter;
-        saturate.oninput = updateFilter;
+        const hue = document.getElementById("hue");
+        const temp = document.getElementById("temp");
+        const shadow = document.getElementById("shadow");
+        const sharp = document.getElementById("sharp");
+        const rotate = document.getElementById("rotate");
+        const mirror = document.getElementById("mirror");
+        const paperFilter = document.getElementById("paperFilter");
 
-        function confirmColor(){
-            alert("调色效果图已保存，备注："+document.getElementById('remark').value);
+        const brightVal = document.getElementById("brightVal");
+        const contrastVal = document.getElementById("contrastVal");
+        const saturateVal = document.getElementById("saturateVal");
+        const hueVal = document.getElementById("hueVal");
+        const tempVal = document.getElementById("tempVal");
+        const shadowVal = document.getElementById("shadowVal");
+        const sharpVal = document.getElementById("sharpVal");
+        const rotateVal = document.getElementById("rotateVal");
+
+        // 历史记录：用于撤销
+        let historyStack = [];
+        let currentState = getCurrentState();
+
+        // 获取当前控件状态
+        function getCurrentState(){
+            return {
+                bright: bright.value,
+                contrast: contrast.value,
+                saturate: saturate.value,
+                hue: hue.value,
+                temp: temp.value,
+                shadow: shadow.value,
+                sharp: sharp.value,
+                rotate: rotate.value,
+                mirror: mirror.checked,
+                paperFilter: paperFilter.checked
+            };
         }
+
+        // 保存历史
+        function saveHistory(){
+            historyStack.push(JSON.parse(JSON.stringify(currentState)));
+            if(historyStack.length > 20) historyStack.shift();
+        }
+
+        // 应用状态到控件
+        function applyState(state){
+            bright.value = state.bright;
+            contrast.value = state.contrast;
+            saturate.value = state.saturate;
+            hue.value = state.hue;
+            temp.value = state.temp;
+            shadow.value = state.shadow;
+            sharp.value = state.sharp;
+            rotate.value = state.rotate;
+            mirror.checked = state.mirror;
+            paperFilter.checked = state.paperFilter;
+            currentState = state;
+            updateFilter();
+        }
+
+        // 主滤镜更新
+        function updateFilter(){
+            brightVal.innerText = bright.value+"%";
+            contrastVal.innerText = contrast.value+"%";
+            saturateVal.innerText = saturate.value+"%";
+            hueVal.innerText = hue.value+"°";
+            tempVal.innerText = temp.value;
+            shadowVal.innerText = shadow.value;
+            sharpVal.innerText = sharp.value;
+            rotateVal.innerText = rotate.value+"°";
+
+            let filters = [];
+            filters.push(`brightness(${bright.value}%)`);
+            filters.push(`contrast(${contrast.value}%)`);
+            filters.push(`saturate(${saturate.value}%)`);
+            filters.push(`hue-rotate(${hue.value}deg)`);
+
+            // 色温
+            if(temp.value < 0){
+                filters.push(`sepia(${Math.abs(temp.value) / 200})`);
+            }else if(temp.value > 0){
+                filters.push(`saturate(${Number(saturate.value) + Math.round(temp.value / 10)}%)`);
+            }
+
+            // 暗部提亮：用 brightness + contrast 模拟
+            if(shadow.value != 0){
+                filters.push(`brightness(${Number(bright.value) + Math.round(shadow.value / 8)}%)`);
+                filters.push(`contrast(${Number(contrast.value) - Math.round(Math.abs(shadow.value) / 10)}%)`);
+            }
+
+            // 清晰度
+            if(sharp.value > 0){
+                filters.push(`contrast(${Number(contrast.value) + Math.round(sharp.value / 5)}%)`);
+                filters.push(`saturate(${Number(saturate.value) + Math.round(sharp.value / 8)}%)`);
+            }
+
+            // 复古宣纸
+            let extraStyle = "";
+            if(paperFilter.checked){
+                filters.push(`sepia(0.35)`);
+                filters.push(`saturate(115%)`);
+                extraStyle = `box-shadow: inset 0 0 60px rgba(120, 80, 40, 0.35);`;
+            }
+
+            imgDom.style.filter = filters.join(" ");
+            imgDom.style.boxShadow = extraStyle.includes("box-shadow") ? "inset 0 0 60px rgba(120, 80, 40, 0.35)" : "";
+
+            let scaleX = mirror.checked ? -1 : 1;
+            imgDom.style.transform = `rotate(${rotate.value}deg) scaleX(${scaleX})`;
+        }
+
+        // 监听变化并记录历史
+        function bindChange(){
+            [bright, contrast, saturate, hue, temp, shadow, sharp, rotate].forEach(item=>{
+                item.oninput = function(){
+                    saveHistory();
+                    currentState = getCurrentState();
+                    updateFilter();
+                };
+            });
+
+            mirror.onchange = function(){
+                saveHistory();
+                currentState = getCurrentState();
+                updateFilter();
+            };
+
+            paperFilter.onchange = function(){
+                saveHistory();
+                currentState = getCurrentState();
+                updateFilter();
+            };
+        }
+
+        bindChange();
+
+        // 撤销
+        function undoFilter(){
+            if(historyStack.length === 0){
+                alert("没有可撤销的操作");
+                return;
+            }
+            const lastState = historyStack.pop();
+            applyState(lastState);
+            imgTip.innerText = "已撤销上一步操作";
+        }
+
+        // 重置
+        function resetFilter(){
+            saveHistory();
+            applyState({
+                bright: 100,
+                contrast: 100,
+                saturate: 100,
+                hue: 0,
+                temp: 0,
+                shadow: 0,
+                sharp: 0,
+                rotate: 0,
+                mirror: false,
+                paperFilter: false
+            });
+            imgTip.innerText = "已重置为原图状态";
+        }
+
+        // 预设滤镜
+        function applyPreset(type){
+            saveHistory();
+            let preset;
+            switch(type){
+                case "elegant":
+                    preset = {bright:105, contrast:95, saturate:80, hue:0, temp:-10, shadow:10, sharp:5, rotate:0, mirror:false, paperFilter:true};
+                    break;
+                case "warm":
+                    preset = {bright:110, contrast:105, saturate:120, hue:20, temp:40, shadow:5, sharp:10, rotate:0, mirror:false, paperFilter:false};
+                    break;
+                case "cool":
+                    preset = {bright:100, contrast:90, saturate:70, hue:190, temp:-30, shadow:15, sharp:0, rotate:0, mirror:false, paperFilter:false};
+                    break;
+                case "red":
+                    preset = {bright:95, contrast:110, saturate:130, hue:340, temp:20, shadow:-5, sharp:15, rotate:0, mirror:false, paperFilter:true};
+                    break;
+            }
+            applyState(preset);
+            imgTip.innerText = "已应用预设：" + type;
+        }
+
+        // 原图对比
+        function toggleCompare(){
+            isCompare = !isCompare;
+            if(isCompare){
+                originalFilter = imgDom.style.filter;
+                imgDom.style.filter = "none";
+                imgTip.innerText="【原图预览】再次点击切回调色后效果";
+            }else{
+                imgDom.style.filter = originalFilter;
+                imgTip.innerText="【调色预览】再次点击切换原图对比";
+            }
+        }
+
+        // 确认调色
+        function confirmColor(){
+            const remark = document.getElementById('remark').value;
+            alert(`✅调色参数已保存\n亮度:${bright.value}%\n对比度:${contrast.value}%\n饱和度:${saturate.value}%\n色相:${hue.value}°\n色温:${temp.value}\n暗部提亮:${shadow.value}\n清晰度:${sharp.value}\n备注：${remark}`);
+        }
+
+        // 下载效果图
+        function downloadImg(){
+            if(!imgSrc){
+                alert("没有图片无法下载");
+                return;
+            }
+            canvas.width = imgDom.naturalWidth;
+            canvas.height = imgDom.naturalHeight;
+            ctx.filter = imgDom.style.filter;
+            ctx.save();
+            if(mirror.checked){
+                ctx.translate(canvas.width,0);
+                ctx.scale(-1,1);
+            }
+            ctx.drawImage(imgDom,0,0);
+            ctx.restore();
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL("image/png");
+            a.download = "国画调色效果图.png";
+            a.click();
+        }
+
+        // 跳转到订单页，携带全部调色参数
         function goOrderPage(){
-            window.location.href = `order.html?img=${encodeURIComponent(imgSrc)}`;
+            const remark = document.getElementById('remark').value;
+            const params = new URLSearchParams();
+            params.set("img", encodeURIComponent(imgSrc));
+            params.set("bright", bright.value);
+            params.set("contrast", contrast.value);
+            params.set("saturate", saturate.value);
+            params.set("hue", hue.value);
+            params.set("temp", temp.value);
+            params.set("shadow", shadow.value);
+            params.set("sharp", sharp.value);
+            params.set("rotate", rotate.value);
+            params.set("mirror", mirror.checked);
+            params.set("paperFilter", paperFilter.checked);
+            params.set("remark", encodeURIComponent(remark));
+            window.location.href = `order.html?${params.toString()}`;
         }
     </script>
 </body>
