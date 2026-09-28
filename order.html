@@ -98,6 +98,7 @@
         #orderImg{
             max-height:320px;
             display:block;
+            transition: border 0.3s, box-shadow 0.3s;
         }
         .art-preview{
             text-align:center;
@@ -175,25 +176,25 @@
                 </div>
             </div>
 
-            <!-- 调色参数展示区域 -->
+            <!-- 调色参数展示区域（完整新增参数） -->
             <div class="param-info" id="paramBox">
                 <h4 style="color:#8C5A2F;margin-bottom:8px;">调色记录与备注</h4>
                 <p id="paramText"></p>
             </div>
 
-            <h3 style="text-align:center;color:#8C5A2F">选择相框款式（点击预览效果）</h3>
+            <h3 style="text-align:center;color:#8C5A2F">选择成品工艺（点击预览效果）</h3>
             <div class="frame-grid">
-                <div class="frame-item" onclick="selectFrame('wood')">
-                    <h4>原木简约框</h4>
-                    <p>自然原木，素雅国风</p>
+                <div class="frame-item" onclick="selectFrame('frame-in-frame')">
+                    <h4>画中画</h4>
+                    <p>内画框实木封边，外框黑胡桃木铜角框，画面采用悬浮工艺</p>
                 </div>
-                <div class="frame-item" onclick="selectFrame('redwood')">
-                    <h4>红棕复古框</h4>
-                    <p>传统中式，适合山水</p>
+                <div class="frame-item" onclick="selectFrame('relief')">
+                    <h4>浮雕画</h4>
+                    <p>肌理浮雕工艺，呈现立体线条与立体图形效果</p>
                 </div>
-                <div class="frame-item" onclick="selectFrame('blackthin')">
-                    <h4>黑色窄边框</h4>
-                    <p>现代极简，工笔花鸟</p>
+                <div class="frame-item" onclick="selectFrame('screen')">
+                    <h4>蝴蝶结屏风</h4>
+                    <p>传统蝴蝶结链接，框条连接传统燕尾榫，打磨后融合一体</p>
                 </div>
             </div>
             <button class="btn" onclick="submitOrder()">提交订单，进入装裱制作</button>
@@ -203,75 +204,124 @@
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        // 获取color页面传过来所有参数
+        // 获取color页面全部传参
         let imgSrc = urlParams.get('img') ? decodeURIComponent(urlParams.get('img')) : "";
         const bright = urlParams.get('bright') || 100;
         const contrast = urlParams.get('contrast') || 100;
         const saturate = urlParams.get('saturate') || 100;
+        const hue = urlParams.get('hue') || 0;
+        const temp = urlParams.get('temp') || 0;
+        const shadow = urlParams.get('shadow') || 0;
+        const sharp = urlParams.get('sharp') || 0;
         const rotate = urlParams.get('rotate') || 0;
         const mirror = urlParams.get('mirror') === "true";
+        const paperFilter = urlParams.get('paperFilter') === "true";
         const remark = urlParams.get('remark') ? decodeURIComponent(urlParams.get('remark')) : "无备注";
 
         const orderImgDom = document.getElementById("orderImg");
         const frameWrap = document.getElementById("frameWrap");
         const paramText = document.getElementById("paramText");
 
-        // 渲染图片，沿用调色滤镜、旋转、镜像
+        // 复现调色滤镜，和color页面保持一模一样
         if(imgSrc){
             orderImgDom.src = imgSrc;
+            let filters = [];
+            filters.push(`brightness(${bright}%)`);
+            filters.push(`contrast(${contrast}%)`);
+            filters.push(`saturate(${saturate}%)`);
+            filters.push(`hue-rotate(${hue}deg)`);
+
+            if(temp < 0){
+                filters.push(`sepia(${Math.abs(temp) / 200})`);
+            }else if(temp > 0){
+                filters.push(`saturate(${Number(saturate) + Math.round(temp / 10)}%)`);
+            }
+
+            if(shadow != 0){
+                filters.push(`brightness(${Number(bright) + Math.round(shadow / 8)}%)`);
+                filters.push(`contrast(${Number(contrast) - Math.round(Math.abs(shadow) / 10)}%)`);
+            }
+
+            if(sharp > 0){
+                filters.push(`contrast(${Number(contrast) + Math.round(sharp / 5)}%)`);
+                filters.push(`saturate(${Number(saturate) + Math.round(sharp / 8)}%)`);
+            }
+
+            if(paperFilter){
+                filters.push(`sepia(0.35)`);
+                filters.push(`saturate(115%)`);
+                orderImgDom.style.boxShadow = "inset 0 0 60px rgba(120, 80, 40, 0.35)";
+            }
+
+            orderImgDom.style.filter = filters.join(" ");
             let scaleX = mirror ? -1 : 1;
-            orderImgDom.style.filter = `brightness(${bright}%) contrast(${contrast}%) saturate(${saturate}%)`;
             orderImgDom.style.transform = `rotate(${rotate}deg) scaleX(${scaleX})`;
         }
 
-        // 展示调色参数
+        // 展示全部调色参数
         paramText.innerHTML = `
 亮度：${bright}% &nbsp;&nbsp;对比度：${contrast}% &nbsp;&nbsp;饱和度：${saturate}%<br>
-旋转：${rotate}° &nbsp;&nbsp;水平镜像：${mirror ? "开启" : "关闭"}<br>
+色相：${hue}° &nbsp;&nbsp;色温：${temp} &nbsp;&nbsp;暗部提亮：${shadow} &nbsp;&nbsp;清晰度：${sharp}<br>
+旋转：${rotate}° &nbsp;&nbsp;水平镜像：${mirror ? "开启" : "关闭"} &nbsp;&nbsp;宣纸滤镜：${paperFilter ? "开启" : "关闭"}<br>
 改图备注：${remark}
         `;
 
-        // 相框样式配置
+        // 三种成品工艺样式配置
         const frameStyleList = {
-            wood: {
-                border: "12px solid #b48c5e",
-                padding: "6px",
-                boxShadow: "0 4px 12px #00000030"
-            },
-            redwood: {
-                border: "14px solid #6b3822",
-                padding: "8px",
-                boxShadow: "0 4px 14px #00000040"
-            },
-            blackthin: {
-                border: "6px solid #222222",
+            "frame-in-frame": {
+                border: "10px solid #d9c7a9",
                 padding: "4px",
-                boxShadow: "0 3px 8px #00000025"
+                boxShadow: "0 6px 16px rgba(0,0,0,0.35)",
+                innerBorder: "2px solid #8C5A2F"
+            },
+            "relief": {
+                border: "12px solid #b9894f",
+                padding: "10px",
+                boxShadow: "0 10px 24px rgba(0,0,0,0.45)",
+                innerBorder: "3px solid #6b4423"
+            },
+            "screen": {
+                border: "8px solid #c9b591",
+                padding: "6px",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
+                innerBorder: "2px solid #8C5A2F"
             }
         };
         let currentFrameKey = "";
 
-        // 选中相框预览
+        // 选中工艺预览
         function selectFrame(type){
             currentFrameKey = type;
-            // 清除全部active
             document.querySelectorAll(".frame-item").forEach(el=>el.classList.remove("active"));
             event.currentTarget.classList.add("active");
-            // 应用画框css
+
             const style = frameStyleList[type];
             frameWrap.style.border = style.border;
             frameWrap.style.padding = style.padding;
             frameWrap.style.boxShadow = style.boxShadow;
+
+            if (style.innerBorder) {
+                orderImgDom.style.border = style.innerBorder;
+            } else {
+                orderImgDom.style.border = "none";
+            }
         }
 
         // 提交订单，更新进度
         function submitOrder(){
             if(!currentFrameKey){
-                alert("请先选择一款相框！");
+                alert("请先选择一款成品工艺！");
                 return;
             }
+            // 工艺名称映射
+            const frameName = {
+                "frame-in-frame": "画中画",
+                "relief": "浮雕画",
+                "screen": "蝴蝶结屏风"
+            }[currentFrameKey];
+
             document.getElementById("step4").classList.remove("grey");
-            alert("订单提交成功！开始装裱制作，订单档案已保存");
+            alert(`订单提交成功！已选择【${frameName}】工艺，订单档案已保存`);
         }
     </script>
 </body>
